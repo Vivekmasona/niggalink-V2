@@ -1,0 +1,20 @@
+cookies_content = os.getenv('YOUTUBE_COOKIES', '')
+
+# Create a temporary file for cookies if necessary
+if cookies_content:
+    with open('/tmp/youtube_cookies.txt', 'w') as cookie_file:
+        cookie_file.write(cookies_content)
+else:
+    return jsonify({
+        "status": "error",
+        "message": "No cookies found. Set the YOUTUBE_COOKIES environment variable."
+    }), 400
+
+ydl_opts = {
+    'format': 'bestaudio/best',
+    'quiet': True,
+    'cookiefile': '/tmp/youtube_cookies.txt',  # Use temporary file
+    'http_headers': {
+        'User-Agent': 'Mozilla/5.0'
+    }
+}
