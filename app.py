@@ -14,7 +14,7 @@ def extract_audio_info():
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'quiet': True,
-                'cookiefile': 'youtube_cookies.txt',  # Point to the saved cookies file
+                'cookiefile': 'youtube_cookies.txt',  # Use your exported cookies
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0'
                 }
