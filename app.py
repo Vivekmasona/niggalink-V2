@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from yt_dlp import YoutubeDL
 import logging
@@ -8,22 +9,32 @@ logging.basicConfig(level=logging.DEBUG)
 @app.route('/extract', methods=['GET'])
 def extract_audio_info():
     youtube_url = request.args.get('url')
-    
+
     if youtube_url:
         try:
+            # Retrieve cookies from environment variable
+            cookies = os.getenv('YOUTUBE_COOKIES', '')
+
+            if not cookies:
+                return jsonify({
+                    "status": "error",
+                    "message": "No cookies found. Set the YOUTUBE_COOKIES environment variable."
+                }), 400
+
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'quiet': True,
-                'cookiefile': 'youtube_cookies.txt',  # Use your exported cookies
+                'cookie': cookies,  # Pass cookies directly
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0'
                 }
             }
+
             with YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(youtube_url, download=False)
                 playback_url = info_dict.get('url', None)
                 title = info_dict.get('title', 'Unknown Title')
-            
+
             if playback_url:
                 return jsonify({
                     "status": "success",
@@ -35,6 +46,7 @@ def extract_audio_info():
                     "status": "error",
                     "message": "Could not retrieve playback URL"
                 }), 400
+
         except Exception as e:
             logging.error(f"Error extracting info: {e}")
             return jsonify({
