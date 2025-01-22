@@ -1,0 +1,5 @@
+ydl_opts = {
+    'format': 'bestaudio/best',
+    'quiet': True,
+    'cookiefile': 'youtube_cookies.txt',  # Add this line
+}
