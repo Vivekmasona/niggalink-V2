@@ -20,17 +20,16 @@ def sanitize_filename(filename):
 
 @app.route('/')
 def index():
-    # Inline HTML template for simplicity
     html_content = '''
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Video Downloader</title>
+        <title>Audio Downloader</title>
     </head>
     <body>
-        <h1>Download Video</h1>
+        <h1>Download Audio</h1>
         <form id="downloadForm" method="post" action="/download">
             <label for="url">Video URL:</label><br>
             <input type="url" id="url" name="url" required><br><br>
@@ -51,16 +50,17 @@ def download_video():
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             ydl_opts = {
-                'format': 'bestaudio/best',
+                'format': 'bestaudio[ext=m4a]/bestaudio/best',
                 'outtmpl': f'{temp_dir}/%(title)s.%(ext)s',
                 'quiet': True,
                 'restrictfilenames': True,
+                'http_headers': {'User-Agent': 'Mozilla/5.0'}
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(video_url, download=True)
                 video_title = info.get('title', 'audio')
-                video_ext = info.get('ext', 'mp3')
+                video_ext = info.get('ext', 'm4a')
                 video_filename = sanitize_filename(f"{video_title}.{video_ext}")
                 full_path = os.path.join(temp_dir, video_filename)
 
@@ -71,12 +71,14 @@ def download_video():
                     full_path,
                     as_attachment=True,
                     download_name=video_filename,
-                    mimetype='audio/mp3'
+                    mimetype='audio/m4a'
                 )
 
     except yt_dlp.utils.DownloadError as e:
+        logging.error(f"DownloadError: {e}")
         return jsonify({"error": "The file wasn't available on the site."}), 400
     except Exception as e:
+        logging.error(f"Unexpected error: {e}")
         return jsonify({"error": str(e)}), 500
 
 app = app.wsgi_app
