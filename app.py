@@ -7,7 +7,14 @@ app = Flask(__name__)
 
 # Use the /tmp directory for serverless environments like Vercel
 OUTPUT_FOLDER = "/tmp/downloads"
+COOKIES_PATH = "/tmp/cookies.txt"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# Copy cookies.txt to /tmp during initialization
+if os.path.exists("./cookies.txt"):
+    with open("./cookies.txt", "r") as f:
+        with open(COOKIES_PATH, "w") as tmp_f:
+            tmp_f.write(f.read())
 
 @app.route('/api/download', methods=['GET'])
 def download_mp3():
@@ -41,7 +48,7 @@ def download_mp3():
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             },
-            'cookiefile': './cookies.txt',  # Make sure to include this file in your deployment
+            'cookiefile': COOKIES_PATH,  # Use cookies in /tmp
         }
 
         # Download and convert to MP3
