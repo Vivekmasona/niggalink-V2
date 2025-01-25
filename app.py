@@ -1,63 +1,49 @@
-import os
 from flask import Flask, request, jsonify
-from yt_dlp import YoutubeDL
-import logging
+import requests
+import re
+from typing import Optional
+
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
+# Dummy function to simulate data extraction
+def extract_snapchat_spotlight_data(url: str) -> dict:
+    # Your extraction logic here, based on the SnapchatSpotlightIE class
+    # For now, returning dummy data (replace this with the real logic)
+    
+    video_data = {
+        'id': 'W7_EDlXWTBiXAEEniNoMPwAAYYWtidGhudGZpAX1TKn0JAX1TKnXJAAAAAA',
+        'ext': 'mp4',
+        'title': 'Views 💕',
+        'description': '',
+        'thumbnail': 'https://cf-st.sc-cdn.net/d/kKJHIR1QAznRKK9jgYYDq.256.IRZXSOY',
+        'duration': 4.665,
+        'timestamp': 1637777831.369,
+        'upload_date': '20211124',
+        'repost_count': 50,
+        'uploader': 'shreypatel57',
+        'uploader_url': 'https://www.snapchat.com/add/shreypatel57',
+    }
+
+    return video_data
+
+# Flask route to handle the GET request
 @app.route('/extract', methods=['GET'])
-def extract_audio_info():
-    youtube_url = request.args.get('url')
-
-    if youtube_url:
-        try:
-            # Retrieve cookies from environment variable
-            cookies = os.getenv('YOUTUBE_COOKIES', '')
-
-            if not cookies:
-                return jsonify({
-                    "status": "error",
-                    "message": "No cookies found. Set the YOUTUBE_COOKIES environment variable."
-                }), 400
-
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'quiet': True,
-                'cookie': cookies,  # Pass cookies directly
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0'
-                }
-            }
-
-            with YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(youtube_url, download=False)
-                playback_url = info_dict.get('url', None)
-                title = info_dict.get('title', 'Unknown Title')
-
-            if playback_url:
-                return jsonify({
-                    "status": "success",
-                    "title": title,
-                    "playback_url": playback_url
-                })
-            else:
-                return jsonify({
-                    "status": "error",
-                    "message": "Could not retrieve playback URL"
-                }), 400
-
-        except Exception as e:
-            logging.error(f"Error extracting info: {e}")
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
-    else:
-        return jsonify({
-            "status": "error",
-            "message": "No URL provided. Use '?url=YOUTUBE_URL' in the query."
-        }), 400
+def extract():
+    url = request.args.get('url')
+    
+    if not url:
+        return jsonify({'error': 'URL parameter is required.'}), 400
+    
+    try:
+        # Simulate the extraction process
+        video_data = extract_snapchat_spotlight_data(url)
+        
+        # Return the extracted video data as JSON
+        return jsonify(video_data)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
