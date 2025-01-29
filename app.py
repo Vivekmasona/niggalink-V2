@@ -1,38 +1,35 @@
 from flask import Flask, request, Response
-import subprocess
+import yt_dlp
 
 app = Flask(__name__)
 
-@app.route('/stream', methods=['GET'])
+@app.route("/stream")
 def stream_audio():
-    # Get the YouTube URL from query parameters
-    video_url = request.args.get('url')
-    if not video_url:
-        return "Please provide a YouTube URL in the 'url' query parameter.", 400
+    youtube_url = request.args.get("url")
+    if not youtube_url:
+        return {"error": "No URL provided"}, 400
 
-    # yt-dlp command to extract and stream the best audio
-    command = [
-        'yt-dlp',
-        '-f', 'bestaudio',  # Best audio format
-        '-o', '-',          # Output to stdout
-        video_url
-    ]
+    try:
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'quiet': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=False)
+            playback_url = info.get("url")
 
-    def generate():
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        try:
-            while True:
-                output = process.stdout.read(1024)
-                if not output:
-                    break
-                yield output
-        except GeneratorExit:
-            process.terminate()
-        finally:
-            process.wait()
+        if not playback_url:
+            return {"error": "Failed to retrieve audio URL"}, 500
 
-    # Set response headers for audio streaming
-    return Response(generate(), content_type='audio/mpeg')
+        def generate():
+            with requests.get(playback_url, stream=True) as r:
+                for chunk in r.iter_content(chunk_size=1024):
+                    yield chunk
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+        return Response(generate(), content_type="audio/mpeg")
+
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
