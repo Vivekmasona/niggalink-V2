@@ -13,6 +13,7 @@ def get_audio_info():
         ydl_opts = {
             'format': 'bestaudio/best',
             'quiet': True,
+            'cookiefile': 'cookies.txt',  # Add your cookies file path here
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
