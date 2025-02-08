@@ -1,35 +1,43 @@
 from flask import Flask, request, jsonify
-import yt_dlp
+from yt_dlp import YoutubeDL
 import os
 
 app = Flask(__name__)
 
-COOKIE_FILE = "cookies.txt"  # Yahan apni cookies.txt file rakho
+# Directory to store downloaded files
+DOWNLOAD_FOLDER = 'downloads'
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
-@app.route("/stream")
-def get_audio_info():
-    youtube_url = request.args.get("url")
-
-    if not youtube_url:
-        return jsonify({"error": "No URL provided"}), 400
+@app.route('/download', methods=['GET'])
+def download():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({"error": "Missing 'url' parameter"}), 400
 
     try:
+        # Fixed filename for download
+        video_filename = "video.mp4"
+        video_path = os.path.join(DOWNLOAD_FOLDER, video_filename)
+
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'quiet': True,
+            'cookiefile': 'cookies.txt',
+            'format': 'bestvideo+bestaudio/best',
+            'outtmpl': video_path,
+            'merge_output_format': 'mp4',
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4'
+            }]
         }
 
-        # Agar cookies.txt file exist karti hai to use karega
-        if os.path.exists(COOKIE_FILE):
-            ydl_opts["cookiefile"] = COOKIE_FILE
+        with YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(youtube_url, download=False)
-
-        return jsonify(info)
+        # Return playback URL
+        return jsonify({"url": f"{request.host_url}downloads/{video_filename}"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host='0.0.0.0', port=8080)
